@@ -82,21 +82,38 @@ ggplot(data = sample_data) +
 
 ggsave(filename = "cells_per_Phosphorus_concentration.png", width = 6, height = 4)
 
-# filtering of the data
-taxon_abundance <- read_csv("Data/taxon_abundance.csv")
-filtered_data <- taxon_abundance %>%
-  filter(sample_id %in% c("Chloroflexi", "Cyanobacteria", "Bacteroidota"))
+# load the data
+sample_data <- read.csv("Data/sample_data.csv")
+taxon_abundance <- read_csv("Data/taxon_abundance.csv", skip = 2)
+
+#merge them
+merged_Phyla_data <- taxon_abundance %>%
+  left_join(sample_data, by = "sample_id") %>%
+  mutate(env_group = ifelse(is.na(env_group), "Shallow_September", env_group))
+
+#reshaping the data in long format
+merged_Phyla_data_long <- merged_Phyla_data %>%
+  select(sample_id, env_group, Chloroflexi, Cyanobacteria, Bacteroidota) %>%
+  pivot_longer(cols = c( Chloroflexi, Cyanobacteria, Bacteroidota), 
+               names_to = "Phyla", 
+               values_to = "Abundance")
+
+#filter the data
+filtered_data <- merged_Phyla_data_long %>%
+  filter(Phyla %in% c("Chloroflexi", "Cyanobacteria", "Bacteroidota"))
 
 # faceted creation
 
-p <- ggplot(data = filtered_data) +
-  aes(x = env_group, y = Abundance, color = env_group, fill = env_group) + 
-  geom_boxplot(alpha = 0.5, outlier.shape = NA) + 
-  facet_grid(. ~ sample_id) + 
-  labs(x = "Environmental Group", 
-       y = "Microbial Abundance", 
-       title = "Microbial Abundance Across Environmental Groups") +
-  theme_minimal() + 
-  theme(axis.text.x = element_text(angle = 45, hjust = 1), 
+ggplot(data = filtered_data) +
+  aes(x = env_group, y = Abundance, color = env_group, fill = env_group) +
+  facet_grid(. ~ Phyla) +
+  labs(x = "Depth and Season", 
+       y = "Phylum Abundance", 
+       title = "Phylum abundance changes by depth and season.") +
+  geom_boxplot(alpha = 0.5, outlier.shape = NA) +
+  geom_jitter(alpha = 0.5, width = 0.2) +
+  theme(axis.text.x = element_text(angle = 35, hjust  =1),
         legend.position = "none")
 
+ggsave("phylum_abundance_plot.png", width = 10, height = 6)
+  
