@@ -81,3 +81,22 @@ ggplot(data = sample_data) +
   geom_point()
 
 ggsave(filename = "cells_per_Phosphorus_concentration.png", width = 6, height = 4)
+
+# filtering of the data
+taxon_abundance <- read_csv("Data/taxon_abundance.csv")
+filtered_data <- taxon_abundance %>%
+  filter(sample_id %in% c("Chloroflexi", "Cyanobacteria", "Bacteroidota"))
+
+# faceted creation
+
+p <- ggplot(data = filtered_data) +
+  aes(x = env_group, y = Abundance, color = env_group, fill = env_group) + 
+  geom_boxplot(alpha = 0.5, outlier.shape = NA) + 
+  facet_grid(. ~ sample_id) + 
+  labs(x = "Environmental Group", 
+       y = "Microbial Abundance", 
+       title = "Microbial Abundance Across Environmental Groups") +
+  theme_minimal() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), 
+        legend.position = "none")
+
